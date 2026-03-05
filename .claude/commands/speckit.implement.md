@@ -1,5 +1,5 @@
 ---
-description: Execute the implementation plan by processing and executing all tasks defined in tasks.md
+description: Execute the implementation plan using Agent Teams with domain-specialized teammates and automatic test generation
 ---
 
 ## User Input
@@ -12,124 +12,210 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
-1. Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+This command uses **Agent Teams** to parallelize implementation across domains. Each domain (frontend, backend, database) gets a dedicated teammate that handles all tasks for that domain. Teammates reference `.claude/agents/{domain}.md` for domain-specific expertise. The Lead (you, Opus) coordinates the team, handles cross-domain tasks, and monitors progress.
+
+### Step 1: Load Prerequisites
+
+1. Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks` from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute.
 
 2. **Check checklists status** (if FEATURE_DIR/checklists/ exists):
    - Scan all checklist files in the checklists/ directory
-   - For each checklist, count:
-     - Total items: All lines matching `- [ ]` or `- [X]` or `- [x]`
-     - Completed items: Lines matching `- [X]` or `- [x]`
-     - Incomplete items: Lines matching `- [ ]`
-   - Create a status table:
+   - For each checklist, count total, completed, and incomplete items
+   - Display status table
+   - If any incomplete: ask user whether to proceed or stop
+   - If all complete: automatically proceed
 
-     ```text
-     | Checklist | Total | Completed | Incomplete | Status |
-     |-----------|-------|-----------|------------|--------|
-     | ux.md     | 12    | 12        | 0          | ✓ PASS |
-     | test.md   | 8     | 5         | 3          | ✗ FAIL |
-     | security.md | 6   | 6         | 0          | ✓ PASS |
-     ```
-
-   - Calculate overall status:
-     - **PASS**: All checklists have 0 incomplete items
-     - **FAIL**: One or more checklists have incomplete items
-
-   - **If any checklist is incomplete**:
-     - Display the table with incomplete item counts
-     - **STOP** and ask: "Some checklists are incomplete. Do you want to proceed with implementation anyway? (yes/no)"
-     - Wait for user response before continuing
-     - If user says "no" or "wait" or "stop", halt execution
-     - If user says "yes" or "proceed" or "continue", proceed to step 3
-
-   - **If all checklists are complete**:
-     - Display the table showing all checklists passed
-     - Automatically proceed to step 3
-
-3. Load and analyze the implementation context:
-   - **REQUIRED**: Read tasks.md for the complete task list and execution plan
+3. Load and analyze implementation context:
+   - **REQUIRED**: Read tasks.md for the complete task list
    - **REQUIRED**: Read plan.md for tech stack, architecture, and file structure
-   - **IF EXISTS**: Read data-model.md for entities and relationships
-   - **IF EXISTS**: Read contracts/ for API specifications and test requirements
-   - **IF EXISTS**: Read research.md for technical decisions and constraints
-   - **IF EXISTS**: Read quickstart.md for integration scenarios
+   - **REQUIRED**: Read `.specify/memory/constitution.md` for project principles
+   - **IF EXISTS**: Read data-model.md, contracts/, research.md, quickstart.md
 
-4. **Project Setup Verification**:
-   - **REQUIRED**: Create/verify ignore files based on actual project setup:
+### Step 2: Parse and Classify Tasks by Domain
 
-   **Detection & Creation Logic**:
-   - Check if the following command succeeds to determine if the repository is a git repo (create/verify .gitignore if so):
+Parse tasks.md and extract all tasks. Group them into **phases** and **domains**.
 
-     ```sh
-     git rev-parse --git-dir 2>/dev/null
-     ```
+#### Domain Classification Rules
 
-   - Check if Dockerfile* exists or Docker in plan.md → create/verify .dockerignore
-   - Check if .eslintrc* exists → create/verify .eslintignore
-   - Check if eslint.config.* exists → ensure the config's `ignores` entries cover required patterns
-   - Check if .prettierrc* exists → create/verify .prettierignore
-   - Check if .npmrc or package.json exists → create/verify .npmignore (if publishing)
-   - Check if terraform files (*.tf) exist → create/verify .terraformignore
-   - Check if .helmignore needed (helm charts present) → create/verify .helmignore
+| Domain | Detection Rules | Teammate |
+|--------|----------------|----------|
+| **FRONTEND** | Path contains `apps/web/`, `.tsx`, `components/`, `routes/` | frontend teammate |
+| **BACKEND** | Path contains `apps/server/`, `packages/api/`, `routers/` | backend teammate |
+| **DATABASE** | Path contains `packages/db/`, `schema/`, `migration` | database teammate |
+| **CROSS-DOMAIN** | Touches multiple domains, config files, or env setup | Lead (you) |
 
-   **If ignore file already exists**: Verify it contains essential patterns, append missing critical patterns only
-   **If ignore file missing**: Create with full pattern set for detected technology
+If a task doesn't clearly belong to one domain, the Lead executes it directly.
 
-   **Common Patterns by Technology** (from plan.md tech stack):
-   - **Node.js/JavaScript/TypeScript**: `node_modules/`, `dist/`, `build/`, `*.log`, `.env*`
-   - **Python**: `__pycache__/`, `*.pyc`, `.venv/`, `venv/`, `dist/`, `*.egg-info/`
-   - **Java**: `target/`, `*.class`, `*.jar`, `.gradle/`, `build/`
-   - **C#/.NET**: `bin/`, `obj/`, `*.user`, `*.suo`, `packages/`
-   - **Go**: `*.exe`, `*.test`, `vendor/`, `*.out`
-   - **Ruby**: `.bundle/`, `log/`, `tmp/`, `*.gem`, `vendor/bundle/`
-   - **PHP**: `vendor/`, `*.log`, `*.cache`, `*.env`
-   - **Rust**: `target/`, `debug/`, `release/`, `*.rs.bk`, `*.rlib`, `*.prof*`, `.idea/`, `*.log`, `.env*`
-   - **Kotlin**: `build/`, `out/`, `.gradle/`, `.idea/`, `*.class`, `*.jar`, `*.iml`, `*.log`, `.env*`
-   - **C++**: `build/`, `bin/`, `obj/`, `out/`, `*.o`, `*.so`, `*.a`, `*.exe`, `*.dll`, `.idea/`, `*.log`, `.env*`
-   - **C**: `build/`, `bin/`, `obj/`, `out/`, `*.o`, `*.a`, `*.so`, `*.exe`, `Makefile`, `config.log`, `.idea/`, `*.log`, `.env*`
-   - **Swift**: `.build/`, `DerivedData/`, `*.swiftpm/`, `Packages/`
-   - **R**: `.Rproj.user/`, `.Rhistory`, `.RData`, `.Ruserdata`, `*.Rproj`, `packrat/`, `renv/`
-   - **Universal**: `.DS_Store`, `Thumbs.db`, `*.tmp`, `*.swp`, `.vscode/`, `.idea/`
+#### Phase Strategy
 
-   **Tool-Specific Patterns**:
-   - **Docker**: `node_modules/`, `.git/`, `Dockerfile*`, `.dockerignore`, `*.log*`, `.env*`, `coverage/`
-   - **ESLint**: `node_modules/`, `dist/`, `build/`, `coverage/`, `*.min.js`
-   - **Prettier**: `node_modules/`, `dist/`, `build/`, `coverage/`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
-   - **Terraform**: `.terraform/`, `*.tfstate*`, `*.tfvars`, `.terraform.lock.hcl`
-   - **Kubernetes/k8s**: `*.secret.yaml`, `secrets/`, `.kube/`, `kubeconfig*`, `*.key`, `*.crt`
+- **Phase 1-2 (Setup, Foundational)**: Lead executes directly — these often have cross-domain dependencies
+- **Phase 3+ (User Stories)**: Domain teammates execute in parallel (domain-parallel, intra-domain sequential)
+- **Final Phase (Polish)**: Lead executes directly — integration and quality checks
 
-5. Parse tasks.md structure and extract:
-   - **Task phases**: Setup, Tests, Core, Integration, Polish
-   - **Task dependencies**: Sequential vs parallel execution rules
-   - **Task details**: ID, description, file paths, parallel markers [P]
-   - **Execution flow**: Order and dependency requirements
+### Step 3: Execute Setup Phases (Lead)
 
-6. Execute implementation following the task plan:
-   - **Phase-by-phase execution**: Complete each phase before moving to the next
-   - **Respect dependencies**: Run sequential tasks in order, parallel tasks [P] can run together  
-   - **Follow TDD approach**: Execute test tasks before their corresponding implementation tasks
-   - **File-based coordination**: Tasks affecting the same files must run sequentially
-   - **Validation checkpoints**: Verify each phase completion before proceeding
+For Phase 1 and Phase 2:
 
-7. Implementation execution rules:
-   - **Setup first**: Initialize project structure, dependencies, configuration
-   - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
-   - **Core development**: Implement models, services, CLI commands, endpoints
-   - **Integration work**: Database connections, middleware, logging, external services
-   - **Polish and validation**: Unit tests, performance optimization, documentation
+1. Execute each task sequentially using the Task tool (`subagent_type: "general-purpose"`)
+2. Provide domain context from `.claude/agents/{domain}.md` matching the task
+3. After all tasks in the phase: run `bun run test`
+4. Mark completed tasks as `[X]` in tasks.md
+5. Report phase completion
 
-8. Progress tracking and error handling:
-   - Report progress after each completed task
-   - Halt execution if any non-parallel task fails
-   - For parallel tasks [P], continue with successful tasks, report failed ones
-   - Provide clear error messages with context for debugging
-   - Suggest next steps if implementation cannot proceed
-   - **IMPORTANT** For completed tasks, make sure to mark the task off as [X] in the tasks file.
+### Step 4: Create Agent Team for Story Phases
 
-9. Completion validation:
-   - Verify all required tasks are completed
-   - Check that implemented features match the original specification
-   - Validate that tests pass and coverage meets requirements
-   - Confirm the implementation follows the technical plan
-   - Report final status with summary of completed work
+For Phase 3+ (User Story phases), create an Agent Team:
 
-Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/speckit.tasks` first to regenerate the task list.
+1. **Create the team** using TeamCreate:
+   - team_name: use feature short name (e.g., "feature-user-auth")
+   - description: brief feature description
+
+2. **Create tasks** using TaskCreate for each implementation task, organized by domain
+
+3. **Group tasks by domain** from the parsed task list:
+   - Collect all FRONTEND tasks → assigned to frontend teammate
+   - Collect all BACKEND tasks → assigned to backend teammate
+   - Collect all DATABASE tasks → assigned to database teammate
+
+4. **Spawn domain teammates** using the Task tool with `team_name` parameter:
+
+   For each domain that has tasks, spawn ONE teammate:
+
+   ```
+   name: "{domain}"
+   subagent_type: "general-purpose"
+   team_name: "{team-name}"
+   model: "sonnet"
+   ```
+
+   Each teammate's prompt MUST include:
+
+   ```
+   あなたは {domain} ドメインの専門家です。
+
+   ## 最初に読むファイル
+   `.claude/agents/{domain}.md` を読んで、このドメインの実装パターンとテストパターンを理解してください。
+
+   ## あなたの担当タスク
+   以下のタスクを順番に実装してください。各タスク完了後にテストも書いてください。
+
+   {タスクリスト（ID、説明、ファイルパス）}
+
+   ## プロジェクト標準（Constitution より）
+   - TypeScript strict mode、`any` 禁止、`unknown` を使用
+   - Zod でランタイムバリデーション
+   - Biome/Ultracite が自動フォーマット（タブ）
+   - パッケージ境界: public API exports 経由のインポート
+   - tRPC: publicProcedure/protectedProcedure、入力は必ず Zod で検証
+
+   ## 実装ルール
+   - 既存ファイルを修正前に必ず読む
+   - 既存コードのパターンに従う
+   - タスク記述以上の機能を追加しない
+   - 新ファイル作成より既存ファイル編集を優先
+   - 各タスク実装後に対応するテストファイルを作成
+   - TaskUpdate でタスク完了を報告
+
+   ## タスク管理
+   - TaskList でタスクを確認
+   - 作業開始時に TaskUpdate で status を in_progress に
+   - 完了時に TaskUpdate で status を completed に
+   - 問題発生時は Lead にメッセージ送信
+   ```
+
+5. **Assign tasks** to each teammate using TaskUpdate with `owner` parameter
+
+6. **Monitor progress**:
+   - Teammates will send messages on task completion or when blocked
+   - Messages are delivered automatically — no need to poll
+   - If a teammate is blocked, help resolve the issue or reassign
+
+7. **Handle cross-domain tasks**: Execute directly as Lead using the Task tool
+
+### Step 5: Lead Monitoring During Team Execution
+
+While teammates work:
+
+1. **React to messages** from teammates (completion reports, blockers, questions)
+2. **Track progress** via TaskList
+3. **Resolve inter-domain dependencies** if teammates need output from other domains
+4. **Execute cross-domain tasks** that don't fit any single domain
+
+### Step 6: Final Phase (Lead)
+
+After all story phase tasks are complete:
+
+1. **Shut down teammates** using SendMessage with `type: "shutdown_request"`
+2. **Clean up team** using TeamDelete
+3. **Execute final phase tasks** (Polish) directly as Lead
+4. **Run final validation**:
+   - `bun run test` — all tests must pass
+   - `bun run check-types` — no type errors
+5. **Report completion** with summary
+
+### Step 7: Completion Report
+
+```
+## Implementation Complete
+
+### Summary
+- Total tasks: XX completed, XX failed, XX skipped
+- Tests: XX passed, XX failed
+- Type check: PASS/FAIL
+
+### Team Execution
+- Frontend teammate: X tasks completed
+- Backend teammate: X tasks completed
+- Database teammate: X tasks completed
+- Lead (cross-domain): X tasks completed
+
+### Files Created/Modified
+[List of all files touched]
+
+### Test Coverage
+[List of test files created]
+
+### Next Steps
+- Review the implementation
+- Run `bun run test` to verify
+- Run `bun run check-types` for type safety
+- Consider running `bun run dev` to test manually
+```
+
+---
+
+## Progress Tracking
+
+After each phase or significant milestone, update the progress display:
+
+```
+## Implementation Progress
+- [x] Phase 1: Setup (3/3 tasks) — Lead
+- [x] Phase 2: Foundational (5/5 tasks) — Lead
+- [ ] Phase 3: User Story 1 (0/7 tasks) — Team
+  - Frontend: 0/4 tasks
+  - Backend: 0/2 tasks
+  - Database: 0/1 tasks
+- [ ] Phase 4: User Story 2 (0/5 tasks) — Team
+- [ ] Final: Polish (0/3 tasks) — Lead
+
+Tests: 24 passed, 0 failed
+```
+
+## Error Handling
+
+- **Teammate failure**: If a teammate reports an error, assess severity:
+  - Minor: provide guidance via SendMessage, let teammate retry
+  - Major: take over the task as Lead
+- **Test failure** (TaskCompleted hook): The hook runs `bun run test` automatically. If tests fail, the teammate must fix before proceeding.
+- **Cross-domain blocker**: If a teammate is blocked on another domain's output, coordinate directly
+- **Teammate unresponsive**: Check TaskList for status, send message, or take over if needed
+
+## Notes
+
+- **1 teammate = 1 domain's all tasks**: Each teammate handles ALL tasks for their domain, not one task per teammate
+- **Domain expertise via `.claude/agents/`**: Teammates read their domain's agent file for implementation patterns
+- **TaskCompleted hook**: `bun run test` runs automatically on every task completion — tests must pass
+- **Lead stays in control**: Opus manages the team, handles cross-domain work, and makes architectural decisions
+- **Testing is mandatory**: Every implementation task must produce corresponding tests
+- **Shutdown gracefully**: Always shut down teammates and delete team when done
