@@ -25,6 +25,7 @@
     "@my-better-t-app/config": "workspace:*",
     "@types/bun": "catalog:",
     "tsdown": "^0.16.5",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^3.1.0"
   }
 }

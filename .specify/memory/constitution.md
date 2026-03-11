@@ -1,50 +1,57 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Better-T-App Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Type Safety First
+All code MUST be fully typed with TypeScript strict mode. No usage of `any`. Prefer `unknown` for genuinely unknown types. Use Zod schemas for runtime validation at boundaries (API inputs, env vars, form data). Drizzle ORM schemas serve as the single source of truth for database types. Use const assertions (`as const`) for immutable values and literal types.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Monorepo Package Boundaries
+Each package (`api`, `auth`, `config`, `db`, `env`) MUST be self-contained with explicit exports. Cross-package imports MUST go through the package's public API (package.json exports field). No reaching into another package's internal files. Apps (`web`, `server`) consume packages; packages MUST NOT import from apps.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Test Coverage Required
+Every implementation task MUST produce corresponding tests. Use Vitest as the test runner across all workspaces. Test types required:
+- **Unit tests**: Business logic in services and utilities
+- **Component tests**: React components via Testing Library + jsdom
+- **Integration tests**: tRPC routers with mocked DB
+- **Schema tests**: Drizzle ORM schema structure validation
+Tests MUST pass before code is committed (enforced by pre-commit hook).
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Code Quality Automation
+Biome (via Ultracite) is the single source of truth for formatting and linting. Tabs for indentation. The PostToolUse hook auto-formats on every write. lint-staged runs on commit. No manual formatting debates. Run `bun x ultracite fix` before committing.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. API Contract Discipline
+tRPC routers define the contract between frontend and backend. Input validation uses Zod schemas. Protected routes use `protectedProcedure`; public routes use `publicProcedure`. Every router procedure MUST validate its inputs. Error responses use TRPCError with descriptive messages and appropriate error codes.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Technology Standards
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+| Category | Technology |
+|----------|-----------|
+| Runtime | Bun |
+| Language | TypeScript (strict mode) |
+| Frontend | React 19, Vite, TanStack Router (file-based), TanStack Query, shadcn/ui, Tailwind v4 |
+| Backend | Hono, tRPC v11 |
+| Database | PostgreSQL, Drizzle ORM |
+| Auth | better-auth |
+| Testing | Vitest, Testing Library |
+| Code Quality | Biome + Ultracite |
+| Validation | Zod |
+| Env Management | @t3-oss/env-core + dotenv |
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Feature branches follow the pattern: `{number}-{short-name}`
+- Spec-kit pipeline: specify → clarify → plan → tasks → analyze → implement
+- Constitution is checked at the plan stage and during analysis
+- All PRs must pass: type checking (`bun run check-types`), tests (`bun run test`), lint (`bun run check`)
+- Pre-commit hook enforces: tests + lint-staged (ultracite fix)
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes ad-hoc practices. Amendments require:
+1. A documented rationale for the change
+2. Update to the constitution version
+3. Propagation check across spec-kit templates
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+Complexity MUST be justified. Default to the simplest approach that meets requirements (YAGNI). Prefer editing existing files over creating new ones. Do not add features beyond what was requested.
+
+**Version**: 1.0.0 | **Ratified**: 2026-03-01 | **Last Amended**: 2026-03-01

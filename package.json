@@ -35,6 +35,9 @@
     "db:watch": "bun run --filter @my-better-t-app/db db:watch",
     "db:stop": "bun run --filter @my-better-t-app/db db:stop",
     "db:down": "bun run --filter @my-better-t-app/db db:down",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ci": "vitest run --reporter=verbose",
     "check": "ultracite check",
     "fix": "ultracite fix",
     "prepare": "husky"
@@ -51,7 +54,8 @@
     "husky": "latest",
     "lint-staged": "latest",
     "typescript": "catalog:",
-    "ultracite": "7.2.4"
+    "ultracite": "7.2.4",
+    "vitest": "^3.1.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
