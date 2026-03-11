@@ -23,6 +23,16 @@ const TITLE_TEXT = `
     ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
  `;
 
+function getStatusText(isLoading: boolean, data: unknown) {
+	if (isLoading) {
+		return "Checking...";
+	}
+	if (data) {
+		return "Connected";
+	}
+	return "Disconnected";
+}
+
 function HomeComponent() {
 	const healthCheck = useQuery(trpc.healthCheck.queryOptions());
 
@@ -37,11 +47,7 @@ function HomeComponent() {
 							className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}
 						/>
 						<span className="text-muted-foreground text-sm">
-							{healthCheck.isLoading
-								? "Checking..."
-								: healthCheck.data
-									? "Connected"
-									: "Disconnected"}
+							{getStatusText(healthCheck.isLoading, healthCheck.data)}
 						</span>
 					</div>
 				</section>
