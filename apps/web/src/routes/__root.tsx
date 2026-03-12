@@ -1,13 +1,13 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
 	createRootRouteWithContext,
 	HeadContent,
 	Outlet,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import Header from "@/components/header";
+import { DevtoolsToggle } from "@/components/devtools-toggle";
+import { MobileNav } from "@/components/mobile-nav";
+import { SidebarNav } from "@/components/sidebar-nav";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { trpc } from "@/utils/trpc";
@@ -50,14 +50,16 @@ function RootComponent() {
 				disableTransitionOnChange
 				storageKey="vite-ui-theme"
 			>
-				<div className="grid h-svh grid-rows-[auto_1fr]">
-					<Header />
-					<Outlet />
+				<SidebarNav />
+				<div className="flex h-svh flex-col md:ml-56">
+					<div className="flex-1 overflow-auto pb-16 md:pb-0">
+						<Outlet />
+					</div>
 				</div>
+				<MobileNav />
 				<Toaster richColors />
 			</ThemeProvider>
-			<TanStackRouterDevtools position="bottom-left" />
-			<ReactQueryDevtools buttonPosition="bottom-right" position="bottom" />
+			<DevtoolsToggle />
 		</>
 	);
 }
