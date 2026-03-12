@@ -7,8 +7,8 @@ import {
 	Outlet,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import Header from "@/components/header";
 import { MobileNav } from "@/components/mobile-nav";
+import { SidebarNav } from "@/components/sidebar-nav";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { trpc } from "@/utils/trpc";
@@ -51,9 +51,9 @@ function RootComponent() {
 				disableTransitionOnChange
 				storageKey="vite-ui-theme"
 			>
-				<div className="grid h-svh grid-rows-[auto_1fr]">
-					<Header />
-					<div className="overflow-auto pb-16 md:pb-0">
+				<SidebarNav />
+				<div className="flex h-svh flex-col md:ml-56">
+					<div className="flex-1 overflow-auto pb-16 md:pb-0">
 						<Outlet />
 					</div>
 				</div>

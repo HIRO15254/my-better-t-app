@@ -84,7 +84,7 @@ describe("MobileNav", () => {
 
 		const homeLink = await screen.findByText("ホーム");
 		const link = homeLink.closest("a");
-		expect(link?.className).toContain("text-primary");
+		expect(link?.className).toContain("text-sidebar-primary");
 	});
 
 	it("highlights the active navigation item for dashboard", async () => {
@@ -93,10 +93,10 @@ describe("MobileNav", () => {
 
 		const dashboardLink = await screen.findByText("ダッシュボード");
 		const link = dashboardLink.closest("a");
-		expect(link?.className).toContain("text-primary");
+		expect(link?.className).toContain("text-sidebar-primary");
 
 		const homeLink = screen.getByText("ホーム");
 		const homeAnchor = homeLink.closest("a");
-		expect(homeAnchor?.className).toContain("text-muted-foreground");
+		expect(homeAnchor?.className).toContain("text-sidebar-foreground");
 	});
 });
