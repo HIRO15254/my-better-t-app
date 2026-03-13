@@ -29,7 +29,12 @@ async function hashPassword(password: string): Promise<string> {
 		["deriveBits"]
 	);
 	const derivedBits = await crypto.subtle.deriveBits(
-		{ name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
+		{
+			name: "PBKDF2",
+			salt: salt.buffer,
+			iterations: 100_000,
+			hash: "SHA-256",
+		} as AlgorithmIdentifier,
 		keyMaterial,
 		256
 	);
@@ -40,7 +45,9 @@ async function verifyPassword(data: {
 	hash: string;
 	password: string;
 }): Promise<boolean> {
-	const [saltHex, storedHash] = data.hash.split(":");
+	const parts = data.hash.split(":");
+	const saltHex = parts[0] ?? "";
+	const storedHash = parts[1] ?? "";
 	const salt = hexDecode(saltHex);
 	const keyMaterial = await crypto.subtle.importKey(
 		"raw",
@@ -52,10 +59,10 @@ async function verifyPassword(data: {
 	const derivedBits = await crypto.subtle.deriveBits(
 		{
 			name: "PBKDF2",
-			salt: salt as BufferSource,
+			salt: salt.buffer,
 			iterations: 100_000,
 			hash: "SHA-256",
-		},
+		} as AlgorithmIdentifier,
 		keyMaterial,
 		256
 	);
