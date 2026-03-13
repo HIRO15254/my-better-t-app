@@ -4,6 +4,7 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsdown",
+    "build:worker": "tsdown --config tsdown.config.worker.ts",
     "check-types": "tsc -b",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "bun run --hot src/index.ts",
@@ -26,6 +27,7 @@
     "@types/bun": "catalog:",
     "tsdown": "^0.16.5",
     "typescript": "catalog:",
-    "vitest": "^3.1.0"
+    "vitest": "^3.1.0",
+    "wrangler": "^4.0.0"
   }
 }
