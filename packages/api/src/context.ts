@@ -1,6 +1,25 @@
-import { auth } from "@my-better-t-app/auth";
-import { createContextFactory } from "./context-factory";
+import type { createAuth } from "@my-better-t-app/auth";
+import type { Database } from "@my-better-t-app/db";
+import type { Context as HonoContext } from "hono";
 
-export const createContext = createContextFactory(auth);
+export interface CreateContextOptions {
+	context: HonoContext;
+}
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+type AuthInstance = ReturnType<typeof createAuth>;
+
+export function createContextFactory(
+	authInstance: AuthInstance,
+	dbInstance: Database
+) {
+	return async ({ context }: CreateContextOptions) => {
+		const session = await authInstance.api.getSession({
+			headers: context.req.raw.headers,
+		});
+		return { session, db: dbInstance };
+	};
+}
+
+export type Context = Awaited<
+	ReturnType<ReturnType<typeof createContextFactory>>
+>;

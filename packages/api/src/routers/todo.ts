@@ -1,4 +1,3 @@
-import { db } from "@my-better-t-app/db";
 import { todo } from "@my-better-t-app/db/schema/todo";
 import { eq } from "drizzle-orm";
 import z from "zod";
@@ -6,22 +5,22 @@ import z from "zod";
 import { publicProcedure, router } from "../index";
 
 export const todoRouter = router({
-	getAll: publicProcedure.query(async () => {
-		return await db.select().from(todo);
+	getAll: publicProcedure.query(async ({ ctx }) => {
+		return await ctx.db.select().from(todo);
 	}),
 
 	create: publicProcedure
 		.input(z.object({ text: z.string().min(1) }))
-		.mutation(async ({ input }) => {
-			return await db.insert(todo).values({
+		.mutation(async ({ ctx, input }) => {
+			return await ctx.db.insert(todo).values({
 				text: input.text,
 			});
 		}),
 
 	toggle: publicProcedure
 		.input(z.object({ id: z.number(), completed: z.boolean() }))
-		.mutation(async ({ input }) => {
-			return await db
+		.mutation(async ({ ctx, input }) => {
+			return await ctx.db
 				.update(todo)
 				.set({ completed: input.completed })
 				.where(eq(todo.id, input.id));
@@ -29,7 +28,7 @@ export const todoRouter = router({
 
 	delete: publicProcedure
 		.input(z.object({ id: z.number() }))
-		.mutation(async ({ input }) => {
-			return await db.delete(todo).where(eq(todo.id, input.id));
+		.mutation(async ({ ctx, input }) => {
+			return await ctx.db.delete(todo).where(eq(todo.id, input.id));
 		}),
 });

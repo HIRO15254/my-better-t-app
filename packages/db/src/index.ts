@@ -1,5 +1,10 @@
-import { env } from "@my-better-t-app/env/server";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
 import { schema } from "./schema";
 
-export const db = drizzle(env.DATABASE_URL, { schema });
+export function createDb(databaseUrl: string) {
+	const sql = neon(databaseUrl);
+	return drizzle(sql, { schema });
+}
+
+export type Database = ReturnType<typeof createDb>;

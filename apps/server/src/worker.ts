@@ -1,8 +1,8 @@
 import { trpcServer } from "@hono/trpc-server";
-import { createContextFactory } from "@my-better-t-app/api/context-factory";
+import { createContextFactory } from "@my-better-t-app/api/context";
 import { appRouter } from "@my-better-t-app/api/routers/index";
-import { createAuthInstance } from "@my-better-t-app/auth/factory";
-import { createNeonDb } from "@my-better-t-app/db/neon";
+import { createAuth } from "@my-better-t-app/auth";
+import { createDb } from "@my-better-t-app/db";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
@@ -26,23 +26,23 @@ app.use("/*", (c, next) => {
 });
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
-	const db = createNeonDb(c.env.DATABASE_URL);
-	const authInstance = createAuthInstance(db, {
+	const db = createDb(c.env.DATABASE_URL);
+	const auth = createAuth(db, {
 		corsOrigin: c.env.CORS_ORIGIN,
 		secret: c.env.BETTER_AUTH_SECRET,
 		baseURL: c.env.BETTER_AUTH_URL,
 	});
-	return authInstance.handler(c.req.raw);
+	return auth.handler(c.req.raw);
 });
 
 app.use("/trpc/*", (c, next) => {
-	const db = createNeonDb(c.env.DATABASE_URL);
-	const authInstance = createAuthInstance(db, {
+	const db = createDb(c.env.DATABASE_URL);
+	const auth = createAuth(db, {
 		corsOrigin: c.env.CORS_ORIGIN,
 		secret: c.env.BETTER_AUTH_SECRET,
 		baseURL: c.env.BETTER_AUTH_URL,
 	});
-	const contextFactory = createContextFactory(authInstance);
+	const contextFactory = createContextFactory(auth, db);
 	const middleware = trpcServer({
 		router: appRouter,
 		createContext: (_opts, context) => contextFactory({ context }),
