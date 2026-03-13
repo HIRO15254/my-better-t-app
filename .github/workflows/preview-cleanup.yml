@@ -5,6 +5,7 @@ on:
     types: [closed]
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   NEON_PROJECT_ID: ${{ secrets.NEON_PROJECT_ID }}
   NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
   CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
