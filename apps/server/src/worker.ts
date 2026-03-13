@@ -1,7 +1,7 @@
 import { trpcServer } from "@hono/trpc-server";
-import { createContextFactory } from "@my-better-t-app/api/context";
+import { createContextFactory } from "@my-better-t-app/api/context-factory";
 import { appRouter } from "@my-better-t-app/api/routers/index";
-import { createAuthInstance } from "@my-better-t-app/auth";
+import { createAuthInstance } from "@my-better-t-app/auth/factory";
 import { createNeonDb } from "@my-better-t-app/db/neon";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
