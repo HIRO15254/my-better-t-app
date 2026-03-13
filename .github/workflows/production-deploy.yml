@@ -55,7 +55,7 @@ jobs:
       - name: Deploy Worker
         working-directory: apps/server
         run: |
-          npx wrangler deploy \
+          bunx wrangler deploy \
             --var BETTER_AUTH_URL:"${{ secrets.PRODUCTION_API_URL }}" \
             --var CORS_ORIGIN:"${{ secrets.PRODUCTION_WEB_URL }}" \
             --var NODE_ENV:production
@@ -63,8 +63,8 @@ jobs:
       - name: Set Worker secrets
         working-directory: apps/server
         run: |
-          echo "${{ secrets.PRODUCTION_DATABASE_URL }}" | npx wrangler secret put DATABASE_URL
-          echo "${{ secrets.BETTER_AUTH_SECRET }}" | npx wrangler secret put BETTER_AUTH_SECRET
+          echo "${{ secrets.PRODUCTION_DATABASE_URL }}" | bunx wrangler secret put DATABASE_URL
+          echo "${{ secrets.BETTER_AUTH_SECRET }}" | bunx wrangler secret put BETTER_AUTH_SECRET
 
   deploy-web:
     needs: [ci, deploy-api]
@@ -83,6 +83,6 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         run: |
-          npx wrangler pages deploy apps/web/dist \
+          bunx wrangler pages deploy apps/web/dist \
             --project-name "my-better-t-app-web" \
             --branch main

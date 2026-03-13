@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Delete Cloudflare Worker
         run: |
-          npx wrangler delete \
+          bunx wrangler delete \
             --name "my-better-t-app-api-pr-${{ github.event.pull_request.number }}" \
             --force
         env:
