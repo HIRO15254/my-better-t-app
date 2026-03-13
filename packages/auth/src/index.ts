@@ -34,7 +34,7 @@ async function hashPassword(password: string): Promise<string> {
 			salt: salt.buffer,
 			iterations: 100_000,
 			hash: "SHA-256",
-		} as AlgorithmIdentifier,
+		} as never,
 		keyMaterial,
 		256
 	);
@@ -62,7 +62,7 @@ async function verifyPassword(data: {
 			salt: salt.buffer,
 			iterations: 100_000,
 			hash: "SHA-256",
-		} as AlgorithmIdentifier,
+		} as never,
 		keyMaterial,
 		256
 	);
