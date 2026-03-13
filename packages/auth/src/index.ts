@@ -10,6 +10,58 @@ import {
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
+function hexEncode(bytes: Uint8Array): string {
+	return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function hexDecode(hex: string): Uint8Array {
+	const matches = hex.match(/.{2}/g) ?? [];
+	return new Uint8Array(matches.map((byte) => Number.parseInt(byte, 16)));
+}
+
+async function hashPassword(password: string): Promise<string> {
+	const salt = crypto.getRandomValues(new Uint8Array(16));
+	const keyMaterial = await crypto.subtle.importKey(
+		"raw",
+		new TextEncoder().encode(password),
+		"PBKDF2",
+		false,
+		["deriveBits"]
+	);
+	const derivedBits = await crypto.subtle.deriveBits(
+		{ name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
+		keyMaterial,
+		256
+	);
+	return `${hexEncode(salt)}:${hexEncode(new Uint8Array(derivedBits))}`;
+}
+
+async function verifyPassword(data: {
+	hash: string;
+	password: string;
+}): Promise<boolean> {
+	const [saltHex, storedHash] = data.hash.split(":");
+	const salt = hexDecode(saltHex);
+	const keyMaterial = await crypto.subtle.importKey(
+		"raw",
+		new TextEncoder().encode(data.password),
+		"PBKDF2",
+		false,
+		["deriveBits"]
+	);
+	const derivedBits = await crypto.subtle.deriveBits(
+		{
+			name: "PBKDF2",
+			salt: salt as BufferSource,
+			iterations: 100_000,
+			hash: "SHA-256",
+		},
+		keyMaterial,
+		256
+	);
+	return hexEncode(new Uint8Array(derivedBits)) === storedHash;
+}
+
 const authSchema = {
 	account,
 	accountRelations,
@@ -40,6 +92,10 @@ export function createAuth(
 		trustedOrigins: [options.corsOrigin],
 		emailAndPassword: {
 			enabled: true,
+			password: {
+				hash: hashPassword,
+				verify: verifyPassword,
+			},
 		},
 		advanced: {
 			defaultCookieAttributes: {
