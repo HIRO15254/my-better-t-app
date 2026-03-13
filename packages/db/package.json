@@ -5,6 +5,12 @@
     ".": {
       "default": "./src/index.ts"
     },
+    "./neon": {
+      "default": "./src/neon.ts"
+    },
+    "./schema": {
+      "default": "./src/schema.ts"
+    },
     "./*": {
       "default": "./src/*.ts"
     }
@@ -21,6 +27,7 @@
   },
   "dependencies": {
     "@my-better-t-app/env": "workspace:*",
+    "@neondatabase/serverless": "^1.0.0",
     "dotenv": "catalog:",
     "drizzle-orm": "catalog:",
     "pg": "^8.17.1",
