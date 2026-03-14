@@ -7,7 +7,7 @@
   {
     "name": "wf:spec-review",
     "color": "0075ca",
-    "description": "人間: 仕様書レビュー待ち"
+    "description": "人間: PR上でspecレビュー待ち"
   },
   {
     "name": "wf:needs-plan",
@@ -17,7 +17,7 @@
   {
     "name": "wf:plan-review",
     "color": "0075ca",
-    "description": "人間: 実装計画レビュー待ち"
+    "description": "人間: PR上でplanレビュー待ち"
   },
   {
     "name": "wf:implementing",
@@ -27,7 +27,7 @@
   {
     "name": "wf:impl-review",
     "color": "0075ca",
-    "description": "人間: 実装レビュー待ち"
+    "description": "人間: PR上で最終レビュー待ち"
   },
   {
     "name": "wf:done",

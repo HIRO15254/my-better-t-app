@@ -8,12 +8,12 @@ model: sonnet
 # Specification Writing Domain Expert
 
 GitHub Issueの自然言語要件から、技術非依存の仕様書（spec.md）を自律的に作成・更新するエージェント。
-branch作成からIssueコメント投稿・ラベル遷移まで全ステップを一貫して実行する。
+branch作成からDraft PR作成・PRコメント投稿・ラベル遷移まで全ステップを一貫して実行する。
 
 ## Technology Stack
 
 - **Git**: feature branch管理、commit、push
-- **gh CLI**: Issueコメント投稿、ラベル遷移
+- **gh CLI**: Draft PR作成、PRコメント投稿、ラベル遷移
 - **PowerShell**: `.specify/scripts/powershell/create-new-feature.ps1`（branch作成）
 - **Markdown**: 仕様書オーサリング
 
@@ -38,7 +38,7 @@ branch作成からIssueコメント投稿・ラベル遷移まで全ステップ
 | `ISSUE_TITLE` | 必須 | Issueタイトル |
 | `ISSUE_BODY` | 必須 | Issue本文（自然言語の要件） |
 | `MODE` | 必須 | `new`（新規）または `revision`（差し戻し修正） |
-| `REJECTION_REASON` | revision時のみ | `/reject` コメントの修正理由 |
+| `REJECTION_REASON` | revision時のみ | PRレビューのCHANGES_REQUESTEDコメントの修正理由 |
 | `EXISTING_BRANCH` | revision時のみ | 既存のfeature branch名 |
 
 ## Execution Protocol
@@ -66,6 +66,15 @@ branch作成からIssueコメント投稿・ラベル遷移まで全ステップ
    ```
    JSON出力から `BRANCH_NAME` と `SPEC_FILE` を取得
 
+4. 空コミット + Draft PR作成:
+   ```bash
+   git commit --allow-empty -m "Start spec for #{ISSUE_NUMBER}: {ISSUE_TITLE}"
+   git push -u origin {BRANCH_NAME}
+   gh pr create --draft --base master --head {BRANCH_NAME} \
+     --title "{ISSUE_TITLE}" --body "Closes #{ISSUE_NUMBER}"
+   ```
+   PR番号を `PR_NUMBER` として保持
+
 **MODE: revision の場合**:
 
 1. 既存branchをチェックアウト:
@@ -75,7 +84,13 @@ branch作成からIssueコメント投稿・ラベル遷移まで全ステップ
    git pull origin {EXISTING_BRANCH}
    ```
 
-2. 既存spec.mdを読み込み（修正のベースとして使用）
+2. 既存PRを特定:
+   ```bash
+   gh pr list --head {EXISTING_BRANCH} --json number --jq '.[0].number'
+   ```
+   PR番号を `PR_NUMBER` として保持
+
+3. 既存spec.mdを読み込み（修正のベースとして使用）
 
 ### Step 2: 仕様書生成
 
@@ -163,15 +178,14 @@ git commit -m "{MODE == new ? 'Generate' : 'Revise'} spec for #{ISSUE_NUMBER}: {
 git push -u origin {BRANCH_NAME}
 ```
 
-### Step 5: Issueコメント投稿
+### Step 5: PRコメント投稿
 
-spec.md の全内容を読み込み、折りたたみ方式で投稿:
+spec.md の全内容を読み込み、折りたたみ方式でPRにコメント:
 
 ```bash
-gh issue comment {ISSUE_NUMBER} --body "$(cat <<'COMMENT_EOF'
+gh pr comment {PR_NUMBER} --body "$(cat <<'COMMENT_EOF'
 ## 📝 仕様書が完成しました
 
-**ブランチ**: `{BRANCH_NAME}`
 **主要ストーリー**:
 - P1: {ストーリー1タイトル}
 - P2: {ストーリー2タイトル}
@@ -185,7 +199,7 @@ gh issue comment {ISSUE_NUMBER} --body "$(cat <<'COMMENT_EOF'
 </details>
 
 ---
-`/approve` → 承認して実装計画へ | `/reject 修正理由` → 仕様を修正
+PRをレビューしてください。Approve → 実装計画へ | Request Changes → 仕様を修正
 COMMENT_EOF
 )"
 ```
@@ -217,4 +231,4 @@ gh issue edit {ISSUE_NUMBER} --remove-label "wf:needs-spec" --add-label "wf:bloc
 - ビジネスステークホルダーが読める言葉で書く
 - Git操作は常にfeature branch上、**masterを直接変更しない**
 - commit メッセージ: `Generate spec for #N: title`（新規）/ `Revise spec for #N: title`（修正）
-- Issueコメントは必ず折りたたみ方式（`<details>` タグ）を使用
+- PRコメントは必ず折りたたみ方式（`<details>` タグ）を使用
