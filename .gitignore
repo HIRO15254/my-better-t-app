@@ -9,7 +9,7 @@ build
 *.tsbuildinfo
 
 # Environment variables
-.env
+packages/db/.env
 .env*.local
 
 # IDEs and editors

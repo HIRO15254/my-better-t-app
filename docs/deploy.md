@@ -1,46 +1,48 @@
-# デプロイガイド
+# Deployment Guide
 
-## 1. 概要
+> **[日本語版はこちら](deploy.ja.md)**
 
-このリポジトリは Cloudflare Workers + Neon を前提とした構成です。
+## 1. Overview
 
-- **API サーバー**: Cloudflare Workers（Hono）
-- **フロントエンド**: Cloudflare Pages（Vite SPA）
-- **データベース**: Neon PostgreSQL（`@neondatabase/serverless`）
+This repository is built on Cloudflare Workers + Neon architecture.
 
-### デプロイ構成
+- **API Server**: Cloudflare Workers (Hono)
+- **Frontend**: Cloudflare Pages (Vite SPA)
+- **Database**: Neon PostgreSQL (`@neondatabase/serverless`)
 
-| 環境 | トリガー | 内容 |
-|------|---------|------|
-| **ローカル** | `bun run dev` | `wrangler dev`（Workers ローカルシミュレーション） |
-| **プレビュー** | PR オープン | PR ごとに独立した Worker + Pages + Neon ブランチ |
-| **本番** | master push | CI 通過後に Worker + Pages をデプロイ |
+### Deployment Environments
 
-## 2. 前提条件
+| Environment | Trigger | Description |
+|-------------|---------|-------------|
+| **Local** | `bun run dev` | `wrangler dev` (local Workers simulation) |
+| **Preview** | PR opened | Isolated Worker + Pages + Neon branch per PR |
+| **Production** | master push | Deploy Worker + Pages after CI passes |
 
-- [Cloudflare](https://dash.cloudflare.com/sign-up) アカウント（Free plan OK）
-- [Neon](https://console.neon.tech/signup) アカウント（Free plan OK）
-- GitHub リポジトリの管理者権限（Secrets 設定に必要）
-- [Bun](https://bun.sh/) がローカルにインストール済み
+## 2. Prerequisites
 
-## 3. ローカル開発
+- [Cloudflare](https://dash.cloudflare.com/sign-up) account (Free plan OK)
+- [Neon](https://console.neon.tech/signup) account (Free plan OK)
+- GitHub repository admin access (required for Secrets configuration)
+- [Bun](https://bun.sh/) installed locally
 
-### 3.1 Neon データベース作成
+## 3. Local Development
 
-ローカル開発でも Neon を使用します（`@neondatabase/serverless` は HTTP で接続するため、ローカル PostgreSQL は使用不可）。
+### 3.1 Create Neon Database
 
-1. [Neon コンソール](https://console.neon.tech/) でプロジェクトを作成
-2. 「Connection Details」から接続文字列をコピー
+Neon is used for local development as well (`@neondatabase/serverless` connects via HTTP, so a local PostgreSQL instance cannot be used).
 
-### 3.2 環境変数の設定
+1. Create a project in the [Neon Console](https://console.neon.tech/)
+2. Copy the connection string from "Connection Details"
 
-`apps/server/.dev.vars.example` をコピーして `.dev.vars` を作成します。
+### 3.2 Configure Environment Variables
+
+Copy `apps/server/.dev.vars.example` to create `.dev.vars`.
 
 ```bash
 cp apps/server/.dev.vars.example apps/server/.dev.vars
 ```
 
-`.dev.vars` を編集:
+Edit `.dev.vars`:
 
 ```
 DATABASE_URL=postgresql://user:password@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require
@@ -49,200 +51,200 @@ BETTER_AUTH_URL=http://localhost:8787
 CORS_ORIGIN=http://localhost:3001
 ```
 
-### 3.3 マイグレーション実行
+### 3.3 Run Migrations
 
 ```bash
 DATABASE_URL="your-neon-connection-string" bun run db:migrate
 ```
 
-### 3.4 開発サーバー起動
+### 3.4 Start Development Server
 
 ```bash
 bun run dev
 ```
 
-- API: `http://localhost:8787`（`wrangler dev`）
-- Web: `http://localhost:3001`（Vite）
+- API: `http://localhost:8787` (`wrangler dev`)
+- Web: `http://localhost:3001` (Vite)
 
-## 4. Neon セットアップ（CI用）
+## 4. Neon Setup (for CI)
 
-### 4.1 API キー取得
+### 4.1 Get API Key
 
-1. Neon コンソール → 左下「Account Settings」→「API Keys」
-2. 「Generate new API key」→ キーをコピー
+1. Neon Console → "Account Settings" (bottom-left) → "API Keys"
+2. "Generate new API key" → copy the key
 
-### 4.2 プロジェクト ID の確認
+### 4.2 Find Project ID
 
 ```
 https://console.neon.tech/app/projects/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                                        この部分がプロジェクト ID
+                                        This is your Project ID
 ```
 
-## 5. Cloudflare セットアップ
+## 5. Cloudflare Setup
 
-### 5.1 API トークン作成
+### 5.1 Create API Token
 
-1. [API トークン画面](https://dash.cloudflare.com/profile/api-tokens) → 「Create Token」
-2. 「Custom token」を選択し、以下の権限を付与:
+1. [API Tokens page](https://dash.cloudflare.com/profile/api-tokens) → "Create Token"
+2. Choose "Custom token" with the following permissions:
    - **Account** > **Cloudflare Pages** > **Edit**
    - **Account** > **Workers Scripts** > **Edit**
 
-### 5.2 Account ID の確認
+### 5.2 Find Account ID
 
-Cloudflare ダッシュボード →「Workers & Pages」概要ページ → 右サイドバー
+Cloudflare Dashboard → "Workers & Pages" overview page → right sidebar
 
-### 5.3 Pages プロジェクト作成
+### 5.3 Create Pages Project
 
 ```bash
 npx wrangler pages project create my-better-t-app-web
 ```
 
-## 6. GitHub Secrets 設定
+## 6. GitHub Secrets Configuration
 
-**Settings > Secrets and variables > Actions > New repository secret** から追加。
+Add via **Settings > Secrets and variables > Actions > New repository secret**.
 
-### 共通
+### Shared
 
-| Secret 名 | 取得元 | 説明 |
+| Secret Name | Source | Description |
 |---|---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare | Workers/Pages 編集権限付きトークン |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare | Workers & Pages 概要ページ |
-| `BETTER_AUTH_SECRET` | 自分で生成 | `openssl rand -base64 32` で32文字以上 |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare | Token with Workers/Pages edit permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare | Workers & Pages overview page |
+| `BETTER_AUTH_SECRET` | Self-generated | `openssl rand -base64 32` (32+ characters) |
 
-### プレビュー環境用
+### Preview Environment
 
-| Secret 名 | 取得元 | 説明 |
+| Secret Name | Source | Description |
 |---|---|---|
-| `NEON_PROJECT_ID` | Neon コンソール | プロジェクトダッシュボード URL から確認 |
-| `NEON_API_KEY` | Neon Account Settings | API Keys ページで生成 |
+| `NEON_PROJECT_ID` | Neon Console | From project dashboard URL |
+| `NEON_API_KEY` | Neon Account Settings | Generated on API Keys page |
 
-### 本番環境用
+### Production Environment
 
-| Secret 名 | 取得元 | 説明 |
+| Secret Name | Source | Description |
 |---|---|---|
-| `PRODUCTION_DATABASE_URL` | Neon コンソール | メインブランチの接続文字列 |
-| `PRODUCTION_API_URL` | Cloudflare | 本番 Worker URL（例: `https://my-better-t-app-api.<subdomain>.workers.dev`） |
-| `PRODUCTION_WEB_URL` | Cloudflare | 本番 Pages URL（例: `https://my-better-t-app-web.pages.dev`） |
+| `PRODUCTION_DATABASE_URL` | Neon Console | Main branch connection string |
+| `PRODUCTION_API_URL` | Cloudflare | Production Worker URL (e.g., `https://my-better-t-app-api.<subdomain>.workers.dev`) |
+| `PRODUCTION_WEB_URL` | Cloudflare | Production Pages URL (e.g., `https://my-better-t-app-web.pages.dev`) |
 
-> `PRODUCTION_API_URL` / `PRODUCTION_WEB_URL` は初回デプロイ後に実際の URL を確認して設定。カスタムドメインがあればそちらを指定。
+> Set `PRODUCTION_API_URL` / `PRODUCTION_WEB_URL` after the first deployment using the actual URLs. Use custom domains if available.
 
-## 7. カスタマイズ
+## 7. Customization
 
-### Worker 名の変更
+### Changing the Worker Name
 
-`apps/server/wrangler.toml` の `name` を変更した場合:
+If you change `name` in `apps/server/wrangler.toml`, also update:
 
-- `.github/workflows/preview-deploy.yml` の `WORKER_NAME` 変数
-- `.github/workflows/preview-cleanup.yml` の `--name` 引数
+- `WORKER_NAME` variable in `.github/workflows/preview-deploy.yml`
+- `--name` argument in `.github/workflows/preview-cleanup.yml`
 
-### Pages プロジェクト名の変更
+### Changing the Pages Project Name
 
-`preview-deploy.yml` の `PAGES_PROJECT` 変数を変更。
+Update the `PAGES_PROJECT` variable in `preview-deploy.yml`.
 
-### 本番デプロイ
+### Production Deployment
 
-`.github/workflows/production-deploy.yml` により自動化済み。master push 時に CI → マイグレーション → Worker デプロイ → Pages デプロイ。
+Automated via `.github/workflows/production-deploy.yml`. On master push: CI → migration → Worker deploy → Pages deploy.
 
-`concurrency` 設定により直列実行。CI 失敗時はデプロイをスキップ。
+Uses `concurrency` for sequential execution. Deployment is skipped if CI fails.
 
-## 8. 動作確認
+## 8. Verification
 
-### プレビュー
+### Preview
 
-1. テストブランチを作成して PR を出す
-2. Actions タブで「Preview Deploy」を確認
-3. PR コメントにプレビュー URL が投稿される
-4. PR クローズで自動クリーンアップ
+1. Create a test branch and open a PR
+2. Check "Preview Deploy" in the Actions tab
+3. Preview URLs will be posted as a PR comment
+4. Auto-cleanup on PR close
 
-### 本番
+### Production
 
-1. master に push（または PR をマージ）
-2. Actions タブで「Production Deploy」を確認
-3. Worker URL と Pages URL にアクセス
+1. Push to master (or merge a PR)
+2. Check "Production Deploy" in the Actions tab
+3. Access the Worker URL and Pages URL
 
-## 9. トラブルシューティング
+## 9. Troubleshooting
 
-### `CLOUDFLARE_API_TOKEN` 権限不足
+### `CLOUDFLARE_API_TOKEN` Permission Error
 
 ```
 Error: Authentication error
 ```
 
-API トークンに Workers Scripts **Edit** + Cloudflare Pages **Edit** 権限があるか確認。
+Verify the API token has Workers Scripts **Edit** + Cloudflare Pages **Edit** permissions.
 
-### Neon ブランチ作成失敗
+### Neon Branch Creation Failure
 
 ```
 Error: Could not find project
 ```
 
-`NEON_API_KEY` の有効性と `NEON_PROJECT_ID` の一致を確認。
+Check `NEON_API_KEY` validity and `NEON_PROJECT_ID` correctness.
 
-### Worker デプロイ失敗
+### Worker Deployment Failure
 
 ```
 Error: compatibility_date is too old
 ```
 
-`apps/server/wrangler.toml` の `compatibility_date` を更新。
+Update `compatibility_date` in `apps/server/wrangler.toml`.
 
-### マイグレーション失敗
+### Migration Failure
 
 ```
 Error: connection refused
 ```
 
-`DATABASE_URL` のフォーマット確認:
+Verify `DATABASE_URL` format:
 ```
 postgresql://user:password@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require
 ```
 
-### Pages デプロイ失敗
+### Pages Deployment Failure
 
 ```
 Error: A project with this name does not exist
 ```
 
-`npx wrangler pages project create my-better-t-app-web` で事前にプロジェクト作成が必要。
+Create the project first: `npx wrangler pages project create my-better-t-app-web`
 
-## 10. アーキテクチャ
+## 10. Architecture
 
-### プレビューデプロイ（PR オープン時）
+### Preview Deploy (on PR open)
 
 ```
 PR open/synchronize
   |
-  +-> Neon ブランチ作成 (pr-<番号>)
+  +-> Create Neon branch (pr-<number>)
   |     |
-  |     +-> マイグレーション実行
+  |     +-> Run migrations
   |           |
-  |           +-> Worker デプロイ (my-better-t-app-api-pr-<番号>)
+  |           +-> Deploy Worker (my-better-t-app-api-pr-<number>)
   |                 |
-  |                 +-> Pages デプロイ (pr-<番号> ブランチ)
+  |                 +-> Deploy Pages (pr-<number> branch)
   |                       |
-  |                       +-> PR にプレビュー URL をコメント
+  |                       +-> Post preview URLs as PR comment
 ```
 
-### クリーンアップ（PR クローズ時）
+### Cleanup (on PR close)
 
 ```
 PR close/merge
   |
-  +-> Worker 削除 → Neon ブランチ削除 → PR コメント更新
+  +-> Delete Worker → Delete Neon branch → Update PR comment
 ```
 
-### 本番デプロイ（master push 時）
+### Production Deploy (on master push)
 
 ```
 push to master
   |
-  +-> CI (型チェック, lint, テスト)
+  +-> CI (type check, lint, test)
         |
-        +-> マイグレーション → Worker デプロイ → Pages デプロイ
+        +-> Migration → Worker deploy → Pages deploy
 ```
 
-### 技術スタック
+### Tech Stack
 
 ```
                     ┌─────────────────┐

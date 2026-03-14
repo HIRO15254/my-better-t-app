@@ -1,4 +1,4 @@
-// Better-T-Stack
+/// Better-T-Stack
 //
 // Website: https://www.better-t-stack.dev/
 // Stack Builder: https://www.better-t-stack.dev/new
@@ -27,5 +27,5 @@
   "dbSetup": "docker",
   "api": "trpc",
   "webDeploy": "none",
-  "serverDeploy": "none",
+  "serverDeploy": "none"
 }
