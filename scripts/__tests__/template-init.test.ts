@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -30,6 +30,11 @@ async function createFixture(): Promise<string> {
 	await writeFile(
 		path.join(root, "bun.lock"),
 		`"@${TEMPLATE_SLUG}/api": "workspace:*"\n`
+	);
+	await mkdir(path.join(root, ".agents/skills/example"), { recursive: true });
+	await writeFile(
+		path.join(root, ".agents/skills/example/SKILL.md"),
+		`# ${TEMPLATE_DISPLAY_NAME}\nUse @${TEMPLATE_SLUG}/web.\n`
 	);
 	return root;
 }
@@ -93,7 +98,12 @@ describe("initializeTemplate", () => {
 			slug: "acme-app",
 		});
 
-		expect(changed).toEqual(["README.md", "bun.lock", "package.json"]);
+		expect(changed).toEqual([
+			".agents/skills/example/SKILL.md",
+			"README.md",
+			"bun.lock",
+			"package.json",
+		]);
 		expect(await readFile(path.join(root, "package.json"), "utf8")).toContain(
 			TEMPLATE_SLUG
 		);
@@ -116,6 +126,9 @@ describe("initializeTemplate", () => {
 		expect(await readFile(path.join(root, "bun.lock"), "utf8")).not.toContain(
 			TEMPLATE_SLUG
 		);
+		expect(
+			await readFile(path.join(root, ".agents/skills/example/SKILL.md"), "utf8")
+		).toBe("# Acme App\nUse @acme-app/web.\n");
 	});
 
 	it("rejects a second initialization", async () => {

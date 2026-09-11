@@ -48,6 +48,10 @@ bun run build
 
 Cloudflareの初期設定、本番deploy、preview DBの動作は[デプロイガイド](./docs/deploy.ja.md)を参照してください。
 
+## 同梱セットアップSkill
+
+リポジトリSkillに対応したCodexでは、[`.agents/skills`](./.agents/skills/better-t-app-setup/SKILL.md)に同梱した`$better-t-app-setup`を利用できます。プロジェクト名の初期化、Cloudflare D1／Worker／Pages環境の準備・検証、CLIによるGitHub設定、deploy前検査を依頼できます。remote resourceの作成、repository設定の変更、migration、deployは、調査の副作用として実行せず、明示された場合だけ実行します。
+
 ## テンプレート方針
 
 このテンプレートは[Sapphire2](https://github.com/HIRO15254/sapphire2)の開発・テスト・Cloudflare運用基盤を手動で参照して派生しています。認証、MCP/AI連携、ポーカーを含むドメイン機能、製品ブランド、Linear自動化、dev/releaseブランチ運用は意図的に含めません。

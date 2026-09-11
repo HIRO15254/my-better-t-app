@@ -48,6 +48,10 @@ bun run build
 
 See [the deployment guide](./docs/deploy.md) for Cloudflare setup, production delivery, and preview database behavior.
 
+## Bundled setup skill
+
+Repository-aware Codex installations can use the bundled `$better-t-app-setup` skill in [`.agents/skills`](./.agents/skills/better-t-app-setup/SKILL.md). Ask it to initialize the project name, prepare or verify the Cloudflare D1/Worker/Pages environment, configure the required GitHub settings with the CLI, or run deployment preflight checks. It treats remote resource creation, repository setting changes, migrations, and deployment as explicit operations rather than side effects of inspection.
+
 ## Template policy
 
 This template is derived manually from the development, testing, and Cloudflare operating foundations of [Sapphire2](https://github.com/HIRO15254/sapphire2). Product behavior and identity are intentionally excluded: authentication, MCP and AI integrations, poker and other domain features, product branding, Linear automation, and dev/release branch conventions are not part of this repository.

@@ -23,6 +23,7 @@ This file is the source of truth for every coding agent working in this reposito
 - `bun run cf:typegen`: regenerate Cloudflare binding types after changing `wrangler.jsonc`
 - `bun run db:generate`: generate a D1 migration after changing the schema
 - `bun run db:migrate:local`: apply migrations to the local D1 database
+- `$better-t-app-setup`: use the bundled repository skill for template renaming and command-line Cloudflare deployment setup
 
 ## Package boundaries
 
