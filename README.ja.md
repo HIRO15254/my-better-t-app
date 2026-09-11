@@ -1,111 +1,55 @@
-# my-better-t-app
+# Better T App Template
 
-> **[English version](README.md)**
+Cloudflare向けの最小構成フルスタックスターターです。Pages上のReact、Hono/tRPC Worker、初期状態では空のD1データベースで構成されます。
 
-[Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack) で作成されたモダン TypeScript スタックプロジェクトです。React, TanStack Router, Hono, tRPC などを組み合わせています。
+[English](./README.md)
 
-## 技術スタック
+## プロジェクトの作成
 
-- **React 19** + **TanStack Router** - 型安全なファイルベースルーティング
-- **TailwindCSS** + **shadcn/ui** - スタイリングと UI コンポーネント
-- **Hono** - Cloudflare Workers 上の軽量サーバーフレームワーク
-- **tRPC v11** - エンドツーエンド型安全 API
-- **Drizzle ORM** + **Neon PostgreSQL** - データベース（サーバーレス HTTP ドライバ）
-- **Better Auth** - 認証（メール/パスワード、PBKDF2）
-- **Bun** - パッケージマネージャー兼ランタイム
-- **Biome** (Ultracite) - リンティングとフォーマット
-- **Husky** - Git フック
-- **PWA** - Progressive Web App サポート
+このリポジトリをcloneし、アプリケーションコードを追加する前に名前を初期化します。
 
-## プロジェクト構成
-
-```
-my-better-t-app/
-├── apps/
-│   ├── web/            # フロントエンド (React 19 + Vite + TanStack Router)
-│   └── server/         # API (Hono + tRPC on Cloudflare Workers)
-├── packages/
-│   ├── api/            # tRPC ルーターとコンテキスト
-│   ├── auth/           # Better Auth 設定
-│   ├── config/         # 共有 TypeScript 設定
-│   ├── db/             # Drizzle ORM スキーマとマイグレーション
-│   └── env/            # 環境変数バリデーション (Zod)
-├── docs/
-│   ├── deploy.md       # デプロイガイド (EN)
-│   └── deploy.ja.md    # デプロイガイド (JA)
-└── .github/workflows/
-    ├── ci.yml              # PR チェック (型チェック, lint, テスト)
-    ├── preview-deploy.yml  # PR プレビュー環境
-    ├── preview-cleanup.yml # PR クローズ時クリーンアップ
-    └── production-deploy.yml # master push 時の本番デプロイ
+```sh
+bun install --frozen-lockfile
+bun run template:init -- my-app --display-name "My App"
 ```
 
-## はじめかた
+slugはkebab-case必須です。初期化はworkspace scope、import、PWA metadata、Worker・Pages・D1のリソース名、このREADMEを一括更新します。Cloudflareリソースの作成、D1 UUIDの設定、Git remoteの変更は行いません。変更予定は`--dry-run`で確認できます。二重実行は拒否されます。
 
-### 前提条件
+## 含まれるもの
 
-- [Bun](https://bun.sh/) がインストール済み
-- [Neon](https://neon.tech/) PostgreSQL データベース
+- React 19、Vite、TanStack Router/Query、tRPC、Tailwind CSS、shadcn/ui、PWA基盤
+- Cloudflare Workers上のHono
+- 空のD1 schemaとmigrationディレクトリを持つDrizzle ORM
+- `DB`、`CORS_ORIGIN`、`VITE_SERVER_URL`だけの初期環境契約
+- 分割したVitest project、coverage、test discovery検証
+- `master`向けPRのCI、`master`からの本番deploy、同一リポジトリPRのpreview
 
-### セットアップ
+Webの`/`はtRPC APIへの接続状態を表示します。Workerの`/`とtRPCの`healthCheck`はどちらも`OK`を返します。
 
-1. 依存パッケージのインストール:
+## 開発
 
-```bash
-bun install
-```
-
-2. 環境変数テンプレートをコピーして値を設定:
-
-```bash
-cp apps/server/.dev.vars.example apps/server/.dev.vars
-```
-
-```env
-DATABASE_URL=postgresql://user:password@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require
-BETTER_AUTH_SECRET=your-secret-at-least-32-characters-long
-BETTER_AUTH_URL=http://localhost:8787
-CORS_ORIGIN=http://localhost:3001
-```
-
-3. データベースにスキーマを反映:
-
-```bash
-bun run db:push
-```
-
-4. 開発サーバーを起動:
-
-```bash
+```sh
+cp apps/web/.env.example apps/web/.env.local
+bun run cf:typegen
+bun run db:migrate:local
 bun run dev
 ```
 
-- Web: [http://localhost:3001](http://localhost:3001)
-- API: [http://localhost:8787](http://localhost:8787)
+主要な検査コマンド:
 
-## 利用可能なスクリプト
+```sh
+bun run check-types
+bun run check
+bun run test
+bun run test:coverage
+bun run check:test-discovery
+bun run build
+```
 
-| スクリプト | 説明 |
-|-----------|------|
-| `bun run dev` | 全アプリを開発モードで起動 |
-| `bun run build` | 全アプリをビルド |
-| `bun run dev:web` | Web アプリのみ起動 |
-| `bun run dev:server` | API サーバーのみ起動 (`wrangler dev`) |
-| `bun run check-types` | 全パッケージの TypeScript 型チェック |
-| `bun run db:push` | スキーマ変更をデータベースに反映 |
-| `bun run db:generate` | マイグレーションファイルを生成 |
-| `bun run db:migrate` | マイグレーションを実行 |
-| `bun run db:studio` | Drizzle Studio を開く |
-| `bun run check` | リンティングとフォーマットのチェック |
-| `bun run fix` | リンティングとフォーマットの自動修正 |
-| `bun run test` | テスト実行 |
-| `bun run test:watch` | テスト実行（監視モード） |
+Cloudflareの初期設定、本番deploy、preview DBの動作は[デプロイガイド](./docs/deploy.ja.md)を参照してください。
 
-## デプロイ
+## テンプレート方針
 
-**Cloudflare Workers**（API）+ **Cloudflare Pages**（Web）+ **Neon PostgreSQL**（DB）にデプロイします。
+このテンプレートは[Sapphire2](https://github.com/HIRO15254/sapphire2)の開発・テスト・Cloudflare運用基盤を手動で参照して派生しています。認証、MCP/AI連携、ポーカーを含むドメイン機能、製品ブランド、Linear自動化、dev/releaseブランチ運用は意図的に含めません。
 
-- **プレビュー**: PR ごとに自動作成（Worker + Pages + Neon ブランチ）
-- **本番**: `master` への push で自動デプロイ
-
-詳細なセットアップ手順は [docs/deploy.ja.md](docs/deploy.ja.md) を参照してください。
+上流の改善は都度評価して手動で取り込みます。Sapphire2の参照commitは固定せず、自動同期も行いません。

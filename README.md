@@ -1,111 +1,55 @@
-# my-better-t-app
+# Better T App Template
 
-> **[日本語版はこちら](README.ja.md)**
+A deliberately small full-stack starter for Cloudflare: React on Pages, a Hono/tRPC Worker, and an initially empty D1 database.
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, tRPC, and more.
+[日本語](./README.ja.md)
 
-## Tech Stack
+## Create a project
 
-- **React 19** + **TanStack Router** - Type-safe file-based routing
-- **TailwindCSS** + **shadcn/ui** - Styling and UI components
-- **Hono** - Lightweight server framework on Cloudflare Workers
-- **tRPC v11** - End-to-end type-safe APIs
-- **Drizzle ORM** + **Neon PostgreSQL** - Database (serverless HTTP driver)
-- **Better Auth** - Authentication (email/password with PBKDF2)
-- **Bun** - Package manager and runtime
-- **Biome** (Ultracite) - Linting and formatting
-- **Husky** - Git hooks
-- **PWA** - Progressive Web App support
+Clone this repository, then initialize its names before adding application code:
 
-## Project Structure
-
-```
-my-better-t-app/
-├── apps/
-│   ├── web/            # Frontend (React 19 + Vite + TanStack Router)
-│   └── server/         # API (Hono + tRPC on Cloudflare Workers)
-├── packages/
-│   ├── api/            # tRPC router and context
-│   ├── auth/           # Better Auth configuration
-│   ├── config/         # Shared TypeScript config
-│   ├── db/             # Drizzle ORM schema and migrations
-│   └── env/            # Environment variable validation (Zod)
-├── docs/
-│   ├── deploy.md       # Deployment guide (EN)
-│   └── deploy.ja.md    # Deployment guide (JA)
-└── .github/workflows/
-    ├── ci.yml              # PR checks (type check, lint, test)
-    ├── preview-deploy.yml  # PR preview environment
-    ├── preview-cleanup.yml # Cleanup on PR close
-    └── production-deploy.yml # Production deploy on push to master
+```sh
+bun install --frozen-lockfile
+bun run template:init -- my-app --display-name "My App"
 ```
 
-## Getting Started
+The slug must be kebab-case. Initialization updates the workspace scope, imports, PWA metadata, Worker, Pages and D1 resource names, and these README files. It does not create Cloudflare resources, assign a D1 UUID, or change Git remotes. Use `--dry-run` to preview changes. Initialization refuses a second run.
 
-### Prerequisites
+## What is included
 
-- [Bun](https://bun.sh/) installed
-- [Neon](https://neon.tech/) PostgreSQL database
+- React 19, Vite, TanStack Router and Query, tRPC, Tailwind CSS, shadcn/ui, and PWA support
+- Hono on Cloudflare Workers
+- Drizzle ORM with an empty D1 schema and migration directory
+- Runtime contracts limited to `DB`, `CORS_ORIGIN`, and `VITE_SERVER_URL`
+- Split Vitest projects, coverage, and test-discovery validation
+- CI for pull requests to `master`, production deployment from `master`, and same-repository PR previews
 
-### Setup
+The browser route `/` reports whether the tRPC API is reachable. The Worker route `/` and tRPC `healthCheck` both return `OK`.
 
-1. Install dependencies:
+## Development
 
-```bash
-bun install
-```
-
-2. Copy the environment variables template and fill in your values:
-
-```bash
-cp apps/server/.dev.vars.example apps/server/.dev.vars
-```
-
-```env
-DATABASE_URL=postgresql://user:password@ep-xxxx.region.aws.neon.tech/neondb?sslmode=require
-BETTER_AUTH_SECRET=your-secret-at-least-32-characters-long
-BETTER_AUTH_URL=http://localhost:8787
-CORS_ORIGIN=http://localhost:3001
-```
-
-3. Push the schema to your database:
-
-```bash
-bun run db:push
-```
-
-4. Start development:
-
-```bash
+```sh
+cp apps/web/.env.example apps/web/.env.local
+bun run cf:typegen
+bun run db:migrate:local
 bun run dev
 ```
 
-- Web: [http://localhost:3001](http://localhost:3001)
-- API: [http://localhost:8787](http://localhost:8787)
+Common checks:
 
-## Available Scripts
+```sh
+bun run check-types
+bun run check
+bun run test
+bun run test:coverage
+bun run check:test-discovery
+bun run build
+```
 
-| Script | Description |
-|--------|-------------|
-| `bun run dev` | Start all apps in development mode |
-| `bun run build` | Build all apps |
-| `bun run dev:web` | Start web app only |
-| `bun run dev:server` | Start API server only (`wrangler dev`) |
-| `bun run check-types` | TypeScript type check across all packages |
-| `bun run db:push` | Push schema changes to database |
-| `bun run db:generate` | Generate migration files |
-| `bun run db:migrate` | Run database migrations |
-| `bun run db:studio` | Open Drizzle Studio |
-| `bun run check` | Run linting and formatting check |
-| `bun run fix` | Auto-fix linting and formatting |
-| `bun run test` | Run tests |
-| `bun run test:watch` | Run tests in watch mode |
+See [the deployment guide](./docs/deploy.md) for Cloudflare setup, production delivery, and preview database behavior.
 
-## Deployment
+## Template policy
 
-The project deploys to **Cloudflare Workers** (API) + **Cloudflare Pages** (Web) + **Neon PostgreSQL** (DB).
+This template is derived manually from the development, testing, and Cloudflare operating foundations of [Sapphire2](https://github.com/HIRO15254/sapphire2). Product behavior and identity are intentionally excluded: authentication, MCP and AI integrations, poker and other domain features, product branding, Linear automation, and dev/release branch conventions are not part of this repository.
 
-- **Preview**: Automatically created per PR (Worker + Pages + Neon branch)
-- **Production**: Automatically deployed on push to `master`
-
-See [docs/deploy.md](docs/deploy.md) for detailed setup instructions.
+Upstream improvements are evaluated and ported manually. This repository does not pin a Sapphire2 commit and does not automatically synchronize with it.

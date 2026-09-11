@@ -1,57 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { ConnectionStatus } from "@/components/connection-status";
+import { getConnectionStatus } from "@/lib/connection-status";
 import { trpc } from "@/utils/trpc";
 
-export const Route = createFileRoute("/")({
-	component: HomeComponent,
-});
+export const Route = createFileRoute("/")({ component: HomePage });
 
-const TITLE_TEXT = `
- ██████╗ ███████╗████████╗████████╗███████╗██████╗
- ██╔══██╗██╔════╝╚══██╔══╝╚══██╔══╝██╔════╝██╔══██╗
- ██████╔╝█████╗     ██║      ██║   █████╗  ██████╔╝
- ██╔══██╗██╔══╝     ██║      ██║   ██╔══╝  ██╔══██╗
- ██████╔╝███████╗   ██║      ██║   ███████╗██║  ██║
- ╚═════╝ ╚══════╝   ╚═╝      ╚═╝   ╚══════╝╚═╝  ╚═╝
-
- ████████╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
- ╚══██╔══╝    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
-    ██║       ███████╗   ██║   ███████║██║     █████╔╝
-    ██║       ╚════██║   ██║   ██╔══██║██║     ██╔═██╗
-    ██║       ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
-    ╚═╝       ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- `;
-
-function getStatusText(isLoading: boolean, data: unknown) {
-	if (isLoading) {
-		return "Checking...";
-	}
-	if (data) {
-		return "Connected";
-	}
-	return "Disconnected";
-}
-
-function HomeComponent() {
-	const healthCheck = useQuery(trpc.healthCheck.queryOptions());
+function HomePage() {
+	const health = useQuery(trpc.healthCheck.queryOptions());
+	const status = getConnectionStatus(health);
 
 	return (
-		<div className="container mx-auto max-w-3xl px-4 py-2">
-			<pre className="overflow-x-auto font-mono text-sm">{TITLE_TEXT}</pre>
-			<div className="grid gap-6">
-				<section className="rounded-lg border p-4">
-					<h2 className="mb-2 font-medium">API Status</h2>
-					<div className="flex items-center gap-2">
-						<div
-							className={`h-2 w-2 rounded-full ${healthCheck.data ? "bg-green-500" : "bg-red-500"}`}
-						/>
-						<span className="text-muted-foreground text-sm">
-							{getStatusText(healthCheck.isLoading, healthCheck.data)}
-						</span>
-					</div>
-				</section>
-			</div>
-		</div>
+		<main className="mx-auto flex min-h-svh max-w-3xl items-center px-6 py-16">
+			<section className="w-full space-y-6">
+				<p className="font-medium text-muted-foreground text-sm uppercase tracking-widest">
+					Cloudflare starter
+				</p>
+				<h1 className="font-semibold text-4xl tracking-tight sm:text-5xl">
+					Better T App Template
+				</h1>
+				<p className="max-w-xl text-lg text-muted-foreground">
+					React, Hono, tRPC, and an empty D1 database—ready for your
+					application.
+				</p>
+				<ConnectionStatus status={status} />
+			</section>
+		</main>
 	);
 }

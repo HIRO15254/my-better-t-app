@@ -1,29 +1,23 @@
 {
-  "name": "@my-better-t-app/db",
+  "name": "@better-t-app-template/db",
+  "private": true,
   "type": "module",
   "exports": {
-    ".": {
-      "default": "./src/index.ts"
-    },
-    "./*": {
-      "default": "./src/*.ts"
-    }
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
   },
   "scripts": {
-    "db:push": "drizzle-kit push",
+    "check-types": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.0",
-    "drizzle-orm": "catalog:",
-    "zod": "catalog:"
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
-    "@my-better-t-app/config": "workspace:*",
-    "drizzle-kit": "^0.31.8",
+    "@better-t-app-template/config": "workspace:*",
+    "drizzle-kit": "^0.31.10",
     "typescript": "catalog:",
-    "vitest": "^3.1.0"
+    "vitest": "4.1.2"
   }
 }

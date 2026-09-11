@@ -13,21 +13,14 @@ export default defineConfig({
 		VitePWA({
 			registerType: "autoUpdate",
 			manifest: {
-				name: "my-better-t-app",
-				short_name: "my-better-t-app",
-				description: "my-better-t-app - PWA Application",
-				theme_color: "#0c0c0c",
+				name: "Better T App Template",
+				short_name: "Better T App Template",
+				description: "A Cloudflare-ready TypeScript application template",
+				theme_color: "#171717",
 			},
 			pwaAssets: { disabled: false, config: true },
-			devOptions: { enabled: true },
 		}),
 	],
-	resolve: {
-		alias: {
-			"@": path.resolve(import.meta.dirname, "./src"),
-		},
-	},
-	server: {
-		port: 3001,
-	},
+	resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
+	server: { port: 3001 },
 });

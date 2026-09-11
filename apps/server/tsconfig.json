@@ -1,14 +1,8 @@
 {
-  "extends": "@my-better-t-app/config/tsconfig.base.json",
+  "extends": "@better-t-app-template/config/tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
-    "outDir": "dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "jsx": "react-jsx",
-    "jsxImportSource": "hono/jsx",
-    "strictNullChecks": true
-  }
+    "jsxImportSource": "hono/jsx"
+  },
+  "include": ["src", "worker-configuration.d.ts"]
 }
